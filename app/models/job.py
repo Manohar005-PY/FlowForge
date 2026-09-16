@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime
+from typing import Any
 from sqlalchemy import DateTime, func, Enum
 from sqlalchemy.dialects.postgresql import JSONB
 
@@ -15,7 +16,7 @@ class Job(Base):
     type:Mapped[str] = mapped_column(
         nullable=False
     )
-    payload:Mapped[dict] = mapped_column(
+    payload:Mapped[dict[str, Any]] = mapped_column(
         JSONB,
         nullable=False
     )
