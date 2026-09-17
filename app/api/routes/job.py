@@ -18,5 +18,12 @@ job = APIRouter(
 def create_job(job_data: JobCreate, db: Session = Depends(get_db)) -> Job:
     repository = JobRepository(db)
     queue = Queue(redis_conn)
-    service = JobService(db, repository,queue)
-    return service.create_job(job_data)
+    service = JobService(db, repository)
+    return service.create_job(job_data,queue)
+
+@job.get("/{job_id}", response_model=JobResponse)
+def get_job_by_id(job_id:int, db:Session = Depends(get_db)) -> Job | None:
+    repository = JobRepository(db)
+    service = JobService(db,repository)
+    return service.get_the_job_by_id(job_id)
+    

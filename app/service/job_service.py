@@ -7,12 +7,12 @@ from app.redis.queue import Queue
 from sqlalchemy.orm import Session
 
 class JobService():
-    def __init__(self,db:Session, jobrepository:JobRepository,queue:Queue):
+    def __init__(self,db:Session, jobrepository:JobRepository):
         self.db = db
         self.jobrepository = jobrepository
-        self.queue = queue
 
-    def create_job(self, job_data: JobCreate) -> Job:
+    def create_job(self, job_data: JobCreate,queue:Queue) -> Job:
+        self.queue = queue
         new_job = Job(
             type=job_data.type,
             payload=job_data.payload,
@@ -23,3 +23,7 @@ class JobService():
             self.queue.enqueue(new_job.id)
 
         return new_job
+
+    def get_the_job_by_id(self,job_id:int) -> Job | None:
+        job = self.jobrepository.get_job_by_id(job_id)
+        return job
