@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from app.models.job import Job
+from app.models.enum import JOB_STATUS
 
 
 class JobRepository():
@@ -19,3 +20,11 @@ class JobRepository():
         result = self.db.execute(query)
         job = result.scalar_one_or_none()
         return job
+
+    def update_status(self,job_id:int,status:JOB_STATUS):
+        job = self.get_job_by_id(job_id)
+        if job is not None:
+            job.status = status
+            self.db.add(job)
+            self.db.commit()
+            self.db.refresh(job)
