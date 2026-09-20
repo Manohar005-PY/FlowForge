@@ -1,8 +1,9 @@
 from app.repositroy.job_repository import JobRepository
 from app.redis.queue import Queue
+from app.redis.redis import redis_conn
 from app.worker.executor import JobExecutor
 from app.models.enum import JOB_STATUS
-from sqlalchemy.orm import Session
+from app.db.session import SessionLocal
 
 
 class Worker():
@@ -19,6 +20,8 @@ class Worker():
     def run(self):
         while True:
             job_id = self.queue.dequeue()
+            if job_id is None:
+                continue
             self.process_job(job_id)
 
     def process_job(self,job_id):
@@ -33,3 +36,21 @@ class Worker():
             self.repository.update_status(job.id,JOB_STATUS.SUCCESS)
         except Exception:
             self.repository.update_status(job.id,JOB_STATUS.FAILED)
+
+
+def main() -> None:
+    db = SessionLocal()
+    try:
+        worker = Worker(
+            queue=Queue(redis_conn),
+            repository=JobRepository(db),
+            executor=JobExecutor(),
+            worker_id=1,
+        )
+        worker.run()
+    finally:
+        db.close()
+
+
+if __name__ == "__main__":
+    main()

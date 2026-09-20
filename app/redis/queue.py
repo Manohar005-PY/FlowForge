@@ -10,7 +10,7 @@ class Queue:
         return True
 
     def dequeue(self, timeout:int = 0) -> Optional[int]:
-        result = self.redis_conn.blpop(self.queue_name, timeout=timeout)
+        result = self.redis_conn.blpop(self.queue_name, timeout=0)
 
         if result is not None:
             _, job_id = result

@@ -3,6 +3,7 @@ from sqlalchemy import select
 
 from app.models.job import Job
 from app.models.enum import JOB_STATUS
+from datetime import datetime
 
 
 class JobRepository():
@@ -25,6 +26,10 @@ class JobRepository():
         job = self.get_job_by_id(job_id)
         if job is not None:
             job.status = status
+            if status is JOB_STATUS.QUEUED:
+                job.scheduled_at = datetime.now()
+            if status is JOB_STATUS.SUCCESS:
+                job.completed_at = datetime.now()
             self.db.add(job)
             self.db.commit()
             self.db.refresh(job)
