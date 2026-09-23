@@ -3,7 +3,13 @@ from app.redis.queue import Queue
 from app.redis.redis import redis_conn
 from app.worker.executor import JobExecutor
 from app.models.enum import JOB_STATUS
+from app.models.job import Job
 from app.db.session import SessionLocal
+
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class Worker():
@@ -24,19 +30,29 @@ class Worker():
                 continue
             self.process_job(job_id)
 
-    def process_job(self,job_id):
+    def process_job(self,job_id:int):
         job = self.repository.get_job_by_id(job_id)
         if job is None:
             return
         self.repository.update_status(job_id,JOB_STATUS.RUNNING)
+        self.repository.update_attempt_count(job_id)
 
         try:
             status = self.executor.execute(job)
-
             self.repository.update_status(job.id,JOB_STATUS.SUCCESS)
-        except Exception:
-            self.repository.update_status(job.id,JOB_STATUS.FAILED)
+        except Exception as exe:
+            self.exception_handler(job, exe)
 
+    def exception_handler(self, job:Job,exe):
+        job_id = job.id
+        max_retry = job.max_retries
+        attempt = job.attempt_count
+        logger.exception("Job %s failed on attempt %s", job_id, attempt)
+        if attempt <= max_retry:
+            self.repository.update_status(job_id, JOB_STATUS.QUEUED)
+            self.queue.enqueue(job_id)
+        else:
+            self.repository.update_status(job_id,JOB_STATUS.FAILED)
 
 def main() -> None:
     db = SessionLocal()
