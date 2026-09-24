@@ -1,8 +1,10 @@
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 from typing import Any
 from sqlalchemy import DateTime, func, Enum
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import DateTime,ForeignKey, UUID
+import uuid
 
 from app.db.base import Base
 from app.models.enum import JOB_STATUS
@@ -59,4 +61,12 @@ class Job(Base):
     completed_at:Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True
+    )
+    worker_id:Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("workers.id", ondelete="SET NULL"),
+        nullable=True
+    )
+    worker:Mapped["Worker"] = relationship(
+        back_populates="jobs"
     )

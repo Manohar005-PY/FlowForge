@@ -7,6 +7,7 @@ from app.models.job import Job
 from app.db.session import SessionLocal
 
 import logging
+import uuid
 
 
 logger = logging.getLogger(__name__)
@@ -18,10 +19,11 @@ class Worker():
             queue:Queue, repository:JobRepository, executor:JobExecutor, 
             worker_id:int
     ):
-        self.worker_id = worker_id
+        self.worker_id = uuid.uuid4()
         self.queue = queue
         self.repository = repository
         self.executor =  executor
+        self.repository.register_worker(self.worker_id)
 
     def run(self):
         while True:
@@ -35,15 +37,16 @@ class Worker():
         if job is None:
             return
         self.repository.update_status(job_id,JOB_STATUS.RUNNING)
+        self.repository.update_worker(job_id,self.worker_id)
         self.repository.update_attempt_count(job_id)
 
         try:
-            status = self.executor.execute(job)
+            self.executor.execute(job)
             self.repository.update_status(job.id,JOB_STATUS.SUCCESS)
         except Exception as exe:
             self.exception_handler(job, exe)
 
-    def exception_handler(self, job:Job,exe):
+    def exception_handler(self, job:Job,exe: Exception):
         job_id = job.id
         max_retry = job.max_retries
         attempt = job.attempt_count

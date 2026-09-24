@@ -2,8 +2,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from app.models.job import Job
+from app.models.worker import Worker
 from app.models.enum import JOB_STATUS
 from datetime import datetime, timezone
+import uuid
 
 
 class JobRepository():
@@ -17,6 +19,13 @@ class JobRepository():
         self.db.flush()
         self.db.refresh(job)
         return job
+
+    def register_worker(self, worker_id: uuid.UUID) -> Worker:
+        worker = Worker(id=worker_id)
+        self.db.add(worker)
+        self.db.commit()
+        self.db.refresh(worker)
+        return worker
     
     def get_job_by_id(self,job_id:int) -> Job | None:
         query = select(Job).where(Job.id == job_id)
@@ -48,3 +57,10 @@ class JobRepository():
         self.db.refresh(job)
 
         return job
+    def update_worker(self,job_id:int,worker_id:uuid.UUID) -> Job|None:
+        job = self.get_job_by_id(job_id)
+        job.worker_id = worker_id
+        
+        self.db.add(job)
+        self.db.commit()
+        self.db.refresh(job)
