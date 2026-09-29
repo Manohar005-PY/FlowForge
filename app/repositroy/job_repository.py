@@ -20,8 +20,8 @@ class JobRepository():
         self.db.refresh(job)
         return job
 
-    def register_worker(self, worker_id: uuid.UUID) -> Worker:
-        worker = Worker(id=worker_id)
+    def register_worker(self, worker_id:uuid.UUID) -> Worker:
+        worker = Worker(id = worker_id)
         self.db.add(worker)
         self.db.commit()
         self.db.refresh(worker)
@@ -64,3 +64,10 @@ class JobRepository():
         self.db.add(job)
         self.db.commit()
         self.db.refresh(job)
+
+    def update_heartbeat(self, worker_id:uuid.UUID) -> None:
+        worker = self.db.get(Worker,worker_id)
+        if worker is not None:
+            worker.last_heartbeat = datetime.now(timezone.utc)
+            self.db.add(worker)
+            self.db.commit()

@@ -1,8 +1,8 @@
 import uuid
 from typing import TYPE_CHECKING
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from datetime import time
-from sqlalchemy import Time, UUID
+from datetime import datetime
+from sqlalchemy import DateTime, UUID
 
 from app.db.base import Base
 
@@ -20,7 +20,7 @@ class Worker(Base):
     jobs: Mapped[list["Job"]] = relationship(
         back_populates="worker"
     )
-    last_heartbeat:Mapped[time] = mapped_column(
-        Time,
+    last_heartbeat:Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
         nullable=True
     )
