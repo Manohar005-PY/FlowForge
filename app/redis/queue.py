@@ -15,5 +15,4 @@ class Queue:
         if result is not None:
             _, job_id = result
             return int(job_id) 
-        
         return None

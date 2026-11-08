@@ -20,7 +20,8 @@ class Job(Base):
     )
     payload:Mapped[dict[str, Any]] = mapped_column(
         JSONB,
-        nullable=False
+        nullable=False,
+        default=dict,
     )
     status:Mapped[JOB_STATUS] = mapped_column(
         Enum(JOB_STATUS),
@@ -38,6 +39,21 @@ class Job(Base):
     max_retries:Mapped[int] = mapped_column(
         nullable=False,
         default=5
+    )
+    idempotency_key: Mapped[str | None] = mapped_column(
+        nullable=True,
+        index=True,
+    )
+    result: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB,
+        nullable=True,
+        default=dict,
+    )
+    error_message: Mapped[str | None] = mapped_column(
+        nullable=True,
+    )
+    cancellation_reason: Mapped[str | None] = mapped_column(
+        nullable=True,
     )
     created_at:Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -58,9 +74,17 @@ class Job(Base):
         DateTime(timezone=True),
         nullable=True
     )
+    lease_expires_at:Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True
+    )
     completed_at:Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True
+    )
+    cancelled_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
     )
     worker_id:Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),

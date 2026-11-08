@@ -83,5 +83,23 @@ class WorkerFailureTests(unittest.TestCase):
         )
 
 
+    def test_integer_worker_ids_are_stable_across_registrations(self):
+        first = Worker(
+            queue=Mock(),
+            repository=Mock(),
+            executor=DeliberatelyFailingExecutor(),
+            worker_id=1,
+        )
+        second = Worker(
+            queue=Mock(),
+            repository=Mock(),
+            executor=DeliberatelyFailingExecutor(),
+            worker_id=1,
+        )
+
+        self.assertEqual(first.worker_id, second.worker_id)
+        self.assertEqual(str(first.worker_id), "00000000-0000-0000-0000-000000000001")
+
+
 if __name__ == "__main__":
     unittest.main()
