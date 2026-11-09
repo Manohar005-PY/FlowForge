@@ -9,10 +9,12 @@ class Queue:
         self.redis_conn.rpush(self.queue_name, job_id)
         return True
 
-    def dequeue(self, timeout:int = 0) -> Optional[int]:
-        result = self.redis_conn.blpop(self.queue_name, timeout=0)
+    def dequeue(self, timeout: int = 0) -> Optional[int]:
+        result = self.redis_conn.blpop(self.queue_name, timeout=timeout)
 
         if result is not None:
             _, job_id = result
-            return int(job_id) 
+            if isinstance(job_id, (bytes, bytearray)):
+                job_id = job_id.decode()
+            return int(job_id)
         return None

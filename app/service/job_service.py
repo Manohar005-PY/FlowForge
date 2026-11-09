@@ -30,6 +30,9 @@ class JobService:
             and (new_job.scheduled_at is None or new_job.scheduled_at <= now)
         ):
             self.queue.enqueue(new_job.id)
+            new_job.status = JOB_STATUS.PENDING
+            self.jobrepository.db.add(new_job)
+            self.jobrepository._commit_and_refresh()
 
         return new_job
 

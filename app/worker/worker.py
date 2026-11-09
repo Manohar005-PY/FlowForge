@@ -6,6 +6,7 @@ from app.models.enum import JOB_STATUS
 from app.models.job import Job
 from app.db.session import SessionLocal
 from app.service.recovery_service import RecoveryWorker
+from app.service.scheduler_service import SchedulerWorker
 
 import logging
 import uuid
@@ -34,6 +35,11 @@ class Worker():
         self.repository = repository
         self.worker_id = self._normalize_worker_id(worker_id)
         self._heartbeat_thread = None
+        self.scheduler_worker = SchedulerWorker(
+            queue=self.queue,
+            repository=self.repository,
+            session_factory=self.session_factory,
+        )
         self.recovery_worker = RecoveryWorker(
             repository=self.repository,
             session_factory=self.session_factory,
@@ -83,6 +89,7 @@ class Worker():
 
     def run(self):
         self.start_heartbeat()
+        self.scheduler_worker.start()
         self.recovery_worker.start()
 
         while not self._stop_event.is_set():
@@ -107,6 +114,7 @@ class Worker():
         self._stop_event.set()
         if self._heartbeat_thread is not None and self._heartbeat_thread.is_alive():
             self._heartbeat_thread.join(timeout=self.heartbeat_interval + 1)
+        self.scheduler_worker.stop()
         self.recovery_worker.stop()
 
     def process_job(self,job_id:int):

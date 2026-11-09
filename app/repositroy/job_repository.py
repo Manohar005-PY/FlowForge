@@ -118,6 +118,27 @@ class JobRepository:
 
         return self.claim_job(job.id, normalized_worker, lease_seconds=lease_seconds)
 
+    def enqueue_due_jobs(self, queue, limit: int = 100) -> list[Job]:
+        now = datetime.now(timezone.utc)
+        due_jobs = self.db.execute(
+            select(Job)
+            .where(Job.status == JOB_STATUS.QUEUED.value)
+            .where((Job.scheduled_at.is_(None)) | (Job.scheduled_at <= now))
+            .where(Job.cancellation_reason.is_(None))
+            .order_by(Job.priority.desc(), Job.created_at.asc())
+            .limit(limit)
+        ).scalars().all()
+
+        for job in due_jobs:
+            queue.enqueue(job.id)
+            job.status = JOB_STATUS.PENDING
+            job.updated_at = now
+            self.db.add(job)
+
+        if due_jobs:
+            self._commit_and_refresh()
+        return due_jobs
+
     def release_job_lease(self, job_id: int, worker_id: uuid.UUID | None = None) -> Job | None:
         job = self.get_job_by_id(job_id)
         if job is None:
